@@ -1,4 +1,6 @@
-from constants import BAD_ARGS, SUPPORTED_VERBS, BAD_VERB
+import sys
+from constants import BAD_ARGS, SUPPORTED_VERBS, BAD_VERB, OK
+from db.constants import BAD_KEY
 
 
 def usage():
@@ -14,3 +16,13 @@ def main(argv):
         usage()
         return BAD_VERB
     db = db.connect(dbname)
+
+    try:
+        if verb == 'get':
+            sys.stdout.write(db[key])
+
+    except KeyError as error:
+        print('Key not found', file=sys.stderr)
+        return BAD_KEY
+
+    return OK
