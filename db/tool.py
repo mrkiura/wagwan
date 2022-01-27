@@ -21,6 +21,10 @@ def main(argv):
         if verb == 'get':
             sys.stdout.write(db[key])
 
+        elif verb == 'set':
+            db[key] = value
+            db.commit()
+
     except KeyError as error:
         print('Key not found', file=sys.stderr)
         return BAD_KEY
