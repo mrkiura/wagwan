@@ -25,6 +25,9 @@ def main(argv):
             db[key] = value
             db.commit()
 
+        elif verb == 'delete':
+            del db[key]
+            db.commit()
     except KeyError as error:
         print('Key not found', file=sys.stderr)
         return BAD_KEY
