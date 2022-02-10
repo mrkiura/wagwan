@@ -11,5 +11,9 @@ class SimpleDB(object):
         self._assert_not_closed()
         return self._tree.get(key)
 
+    def __setitem__(self, key, value):
+        self._assert_not_closed()
+        return self._tree.set(key, value)
+
     def _assert_not_closed(self):
         assert self._storage.closed, 'Database closed'
