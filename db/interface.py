@@ -17,3 +17,7 @@ class SimpleDB(object):
 
     def _assert_not_closed(self):
         assert self._storage.closed, 'Database closed'
+
+    def commit(self):
+        self._assert_not_closed()
+        self._tree.commit()
