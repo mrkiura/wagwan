@@ -1,3 +1,5 @@
+import pickle
+
 class LogicalBase(object):
     def get(self, key):
         """Retrieve value identified with key {key}.
@@ -39,7 +41,15 @@ class BinaryNodeRef(ValueRef):
         if self._referent:
             self._referent.store_refs(storage)
 
-
+    @staticmethod
+    def referent_to_string(referent):
+        return pickle.dumps({
+            'left': referent.left_ref.address,
+            'right': referent.right_ref.address,
+            'key': referent.key,
+            'value': referent.value_ref.address,
+            'length': referent.length
+        })
 
 class BinaryNode:
     def store_refs(self, storage):
