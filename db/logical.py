@@ -35,24 +35,3 @@ class ValueRef:
         if self._referent is not None and self._address:
             self.prepare_to_store(storage)
             self.address = storage.write(self._referent_to_string(self._referent))
-
-class BinaryNodeRef(ValueRef):
-    def prepare_to_store(self, storage):
-        if self._referent:
-            self._referent.store_refs(storage)
-
-    @staticmethod
-    def referent_to_string(referent):
-        return pickle.dumps({
-            'left': referent.left_ref.address,
-            'right': referent.right_ref.address,
-            'key': referent.key,
-            'value': referent.value_ref.address,
-            'length': referent.length
-        })
-
-class BinaryNode:
-    def store_refs(self, storage):
-        self.value_ref.store(storage)
-        self.left_ref.store(storage)
-        self.right_ref.store(storage)

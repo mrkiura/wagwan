@@ -1,15 +1,6 @@
+import pickle
+from db.logical import LogicalBase, ValueRef
 
-from db.logical import LogicalBase
-
-
-class BinaryNode:
-    def __init__(self, left_ref, key, value_ref, right_ref, length) -> None:
-        pass
-
-    def store_refs(self, storage):
-        self.value_ref.store(storage)
-        self.left_ref.store(storage)
-        self.right_ref.store(storage)
 
 class BinaryTree(LogicalBase):
     def _get(self, node, key):
@@ -43,13 +34,23 @@ class BinaryTree(LogicalBase):
         return self.node_ref_class(referent=new_node)
 
 
-class ValueRef(object):
-    def store(self, storage):
-        if self._referent is not None and not self._address:
-            self.prepare_to_store(storage)
-            self._address = storage.write(self.referent_to_string(self._referent))
-
 class BinaryNodeRef(ValueRef):
     def prepare_to_store(self, storage):
         if self._referent:
             self._referent.store_refs(storage)
+
+    @staticmethod
+    def referent_to_string(referent):
+        return pickle.dumps({
+            'left': referent.left_ref.address,
+            'right': referent.right_ref.address,
+            'key': referent.key,
+            'value': referent.value_ref.address,
+            'length': referent.length
+        })
+
+class BinaryNode:
+    def store_refs(self, storage):
+        self.value_ref.store(storage)
+        self.left_ref.store(storage)
+        self.right_ref.store(storage)
