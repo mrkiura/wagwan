@@ -1,73 +1,78 @@
 import os
 import os.path
+import pytest
 import shutil
 import subprocess
 import tempfile
 
-from nose.tools import assert_raises, eq_
-
-import simpledb
 import simpledb.tool
 
 
-class TestDatabase(object):
-    def setup(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.new_tempfile_name = os.path.join(self.temp_dir, "new.db")
-        self.tempfile_name = os.path.join(self.temp_dir, "exisitng.db")
-        open(self.tempfile_name, "w").close()
-
-    def teardown(self):
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_new_database_file(self):
-        db = simpledb.connect(self.new_tempfile_name)
-        db["a"] = "aye"
-        db.commit()
-        db.close()
-
-    def test_persistence(self):
-        db = simpledb.connect(self.tempfile_name)
-        db["b"] = "bee"
-        db["a"] = "aye"
-        db["c"] = "see"
-        db.commit()
-        db["d"] = "dee"
-        eq_(len(db), 4)
-        db.close()
-        db = simpledb.connect(self.tempfile_name)
-        eq_(db["a"], "aye")
-        eq_(db["b"], "bee")
-        eq_(db["c"], "see")
-        with assert_raises(KeyError):
-            db["d"]
-        eq_(len(db), 3)
-        db.close()
+@pytest.fixture
+def db_paths():
+    working_dir = tempfile.mkdtemp()
+    new_db_path = os.path.join(working_dir, "new.db")
+    current_db_path = os.path.join(working_dir, "current.db")
+    yield {
+        'new': new_db_path,
+        'current': current_db_path
+    }
+    shutil.rmtree(working_dir, ignore_errors=True)
 
 
-class TestTool(object):
-    def setup(self):
-        with tempfile.NamedTemporaryFile(delete=False) as temp_f:
-            self.tempfile_name = temp_f.name
+@pytest.fixture
+def tempfile_name():
+    with tempfile.NamedTemporaryFile(delete=False) as temp_f:
+        temp_name = temp_f.name
+        yield temp_name
+        os.remove(temp_name)
 
-    def teardown(self):
-        os.remove(self.tempfile_name)
 
-    def _tool(self, *args):
-        return subprocess.check_output(
-            ["python", "-m", "simpledb.tool", self.tempfile_name] + list(args),
-            stderr=subprocess.STDOUT,
-        )
+def simpledb_tool(tempfile_name, *args):
+    return subprocess.check_output(
+        ['python', '-m', 'simpledb.tool', tempfile_name] + list(args),
+        stderr=subprocess.STDOUT
+    )
 
-    def test_get_non_existent(self):
-        self._tool("set", "a", b"b")
-        self._tool("delete", "a")
-        with assert_raises(subprocess.CalledProcessError) as raised:
-            self._tool("get", "a")
-        eq_(raised.exception.returncode, simpledb.tool.BAD_KEY)
 
-    def test_tool(self):
-        expected = b"b"
-        self._tool("set", "a", expected)
-        actual = self._tool("get", "a")
-        eq_(actual, expected)
+def test_new_database_file(db_paths):
+    db = simpledb.connect(db_paths['new'])
+    db["year"] = "2022"
+    db.commit()
+    db.close()
+
+
+def test_persistence(db_paths):
+    db = simpledb.connect(db_paths['current'])
+    db["artist"] = "Key Glock"
+    db["song"] = "proud"
+    db["year"] = "2022"
+    db.commit()
+    db["label"] = "pre"
+    assert len(db) == 4
+    db.close()
+    db = simpledb.connect(db_paths['current'])
+    assert db["artist"] == "Key Glock"
+    assert db["song"] == "proud"
+    assert db["year"] == "2022"
+    with pytest.raises(KeyError):
+        db["label"]
+    assert len(db) == 3
+    db.close()
+
+
+def test_get_non_existent(tempfile_name):
+    simpledb_tool(tempfile_name, "set", "foo", b"bar")
+    simpledb_tool(tempfile_name, "delete", "foo")
+    with pytest.raises(subprocess.CalledProcessError) as raised:
+        simpledb_tool(tempfile_name, "get", "foo")
+    assert raised.type == subprocess.CalledProcessError
+    assert raised.value.output == b'Key not found\n'
+    assert raised.value.args[0] == simpledb.tool.BAD_KEY
+
+
+def test_tool(tempfile_name):
+    expected = b"b"
+    simpledb_tool(tempfile_name, "set", "a", expected)
+    actual = simpledb_tool(tempfile_name, "get", "a")
+    assert actual == expected
