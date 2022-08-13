@@ -1,6 +1,7 @@
 from __future__ import print_function
 import sys
 
+from constants import BAD_ARGS, SUPPORTED_VERBS, BAD_VERB
 import simpledb
 
 
@@ -22,7 +23,7 @@ def main(argv):
         usage()
         return BAD_ARGS
     dbname, verb, key, value = (argv[1:] + [None])[:4]
-    if verb not in {'get', 'set', 'delete'}:
+    if verb not in SUPPORTED_VERBS:
         usage()
         return BAD_VERB
     db = simpledb.connect(dbname)
