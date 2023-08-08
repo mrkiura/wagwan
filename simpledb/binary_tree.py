@@ -73,8 +73,14 @@ class BinaryNodeRef(ValueRef):
 
 
 class BinaryTree(LogicalBase):
+    """
+    A binary tree implementation for storing key-value pairs.
+    """
     node_ref_class = BinaryNodeRef
 
+        """
+        Initialize the BinaryTree with the given storage.
+        """
     def _get(self, node, key):
         while node is not None:
             if key < node.key:
@@ -84,8 +90,14 @@ class BinaryTree(LogicalBase):
             else:
                 return self._follow(node.value_ref)
         raise KeyError
+        """
+        Retrieve the value associated with the given key in the BinaryTree.
+        """
 
     def _insert(self, node, key, value_ref):
+        """
+        Insert or update the key-value pair in the BinaryTree.
+        """
         if node is None:
             new_node = BinaryNode(
                 self.node_ref_class(), key, value_ref, self.node_ref_class(), 1
